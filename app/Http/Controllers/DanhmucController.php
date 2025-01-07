@@ -44,7 +44,7 @@ class DanhmucController extends Controller
             'name' => $request->name,
             'slug' => $request->slug,
             'image' => $imagePath ? str_replace('public/', 'storage/', $imagePath) : null,
-            'status' => $request->status ?? 0,
+            'status' => $request->status, 
             'parent_id' => $request->parent_id,
         ]);
 
@@ -87,7 +87,7 @@ class DanhmucController extends Controller
             ]
         ]);
 
-        $category = Category::findOrFail($id);         
+        $category = Category::findOrFail($id);       
         $category->update([
             'name' => $request->name,
             'slug' => $request->slug,

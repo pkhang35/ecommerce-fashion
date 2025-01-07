@@ -27,7 +27,7 @@ class Category extends Model
     }
     public function setStatusAttribute($value)
     {
-        $this->attributes['status'] = ($value == 'Hiện') ? 1 : 0;
+        $this->attributes['status'] = (int) $value;
     }
     public function parent()
     {

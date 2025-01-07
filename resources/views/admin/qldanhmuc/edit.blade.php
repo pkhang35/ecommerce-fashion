@@ -26,9 +26,6 @@
                 <div class="form-group">
                     <label for="image">Ảnh</label>
                     <input type="file" id="image" name="image" class="form-control">
-                    @if($category->image)
-                    <input type="text" class="form-control" value="{{ ($category->image) }}" >
-                @endif
                 </div>
 
                 <div class="form-group">

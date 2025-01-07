@@ -41,7 +41,14 @@
                             <td>{{ $category->id }}</td>
                             <td>{{ $category->name }}</td>
                             <td>{{ $category->parent ? $category->parent->name : 'Không có' }}</td>
-                            <td>{{ $category->image }}</td>
+                            <td>
+                                @if($category->image)
+                                    <img src="{{ asset($category->image) }}" alt="Hình ảnh" style="width: 100px; height: 100px; object-fit: cover;">
+                                @else
+                                    Không có
+                                @endif
+                            </td>
+                            
                             <td>{{ $category->status }}</td>
                             <td>{{ $category->created_at }}</td>
                         
