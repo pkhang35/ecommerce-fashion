@@ -36,16 +36,25 @@
                         <th>Thời Gian Vận Chuyển</th>
                         <th>Thời Gian Hoàn Thành</th>
                         <th>Thời Gian Hủy</th>
-                        <th>Hành Động</th>
+                        <th>Thao Tác</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($order as $order)
                                     <tr>
                                         <td>{{ $order->id }}</td>
-                                        <td>{{ $order->account->lastname }}</td>
-                                        <td>{{ $order->status == 0 ? 'Đang xử lý' : ($order->status == 1 ? 'Đã giao' : 'Đã hủy') }}</td>
-                                        <td>{{ $order->status_payment == 0 ? 'Thanh toán thành công' : 'Thanh toán thất bại' }}</td>
+                                        <td>{{ $order->orderCustomer->lastname }}</td>
+                                        <td>
+                                            @switch($order->status)
+                                                @case(1) Đã nhận đơn @break
+                                                @case(2) Đang vận chuyển @break
+                                                @case(3) Đã giao @break
+                                                @case(0) Đã hủy @break
+                                                @default
+                                                Không xác định
+                                            @endswitch
+                                        </td>
+                                        <td>{{ $order->status_payment == 0 ? 'Thất bại' : ($order->status_payment == 1 ? 'Đang xử lí' : 'Thành công') }}</td>
                                         <td>{{ number_format($order->shipping_fee, 0,',', '.') }} VNĐ</td>
                                         <td>{{ number_format($order->orderItems->sum(function ($item) { return $item->quantity * $item->price; }) + $order->shipping_fee, 0, ',', '.') }} VNĐ</td>
                                         <td>{{ $order->created_at }}</td>

@@ -11,23 +11,29 @@
         </div>
         <div class="card-body">
             <p><strong>ID Đơn Hàng:</strong> {{ $order->id }}</p>
-            <p><strong>Khách Hàng:</strong> {{ $order->account->lastname }} {{ $order->account->firstname }}</p>
+            <p><strong>Khách Hàng:</strong> {{ $order->orderCustomer->lastname }} {{ $order->orderCustomer->firstname }}</p>
+            <p><strong>Địa Chỉ Giao Hàng:</strong> {{ $order->orderCustomer->address }}</p>
+            <p><strong>Số Điện Thoại:</strong> {{ $order->orderCustomer->phone }}</p>
+            <p><strong>Phương Thức Thanh Toán:</strong> {{ $order->paymentMethod->method }}</p>
             <p><strong>Ngày Tạo:</strong> {{ $order->created_at }}</p>
             <p><strong>Trạng Thái:</strong>
-                @if ($order->status == 0)
-                    Đang xử lý
-                @elseif ($order->status == 1)
-                    Đã giao
-                @else
-                    Đã hủy
-                @endif
+                @switch($order->status)
+                    @case(0) Đã hủy @break
+                    @case(1) Đã nhận đơn @break
+                    @case(2) Đang vận chuyển @break
+                    @case(3) Đã giao @break
+                    @default
+                        Không xác định
+                @endswitch
             </p>
             <p><strong>Trạng Thái Thanh Toán:</strong>
-                @if ($order->status_payment == 0)
-                    Thanh toán thành công
+            @if ($order->status_payment == 0)
+                    Thất bại
+                @elseif ($order->status_payment == 1)
+                    Đang xử lí
                 @else
-                    Thanh toán thất bại
-                @endif
+                    Thành công
+            @endif
             </p>
             <p><strong>Phí Vận Chuyển:</strong> {{ number_format($order->shipping_fee, 0, ',', '.') }} VNĐ</p>
         </div>
@@ -73,3 +79,12 @@
     </div>
 </div>
 @endsection
+@if($errors->any())
+    <div class="alert alert-danger">
+        <ul>
+            @foreach($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
