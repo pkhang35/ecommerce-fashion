@@ -4,7 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\OrderItem;
-use App\Models\Account;
+use App\Models\OrderCustomer;
+use App\Models\PaymentMethod;
 use Illuminate\Http\Request;
 
 class OrderController extends Controller
@@ -15,7 +16,8 @@ class OrderController extends Controller
     public function index()
     {
         // Lấy tất cả các đơn hàng từ bảng orders
-        $order = Order::all();
+        // Lấy danh sách đơn hàng kèm thông tin order_customer và phương thức thanh toán
+        $order = Order::with(['orderCustomer', 'paymentMethod'])->get();
 
         // Trả về view với dữ liệu đơn hàng
         return view('admin.qldonhang.index', compact('order'));
@@ -26,9 +28,8 @@ class OrderController extends Controller
      */
     public function create()
     {
-        // Lấy tất cả tài khoản từ bảng accounts để tạo dropdown
-        $accounts = Account::all();
-        return view('admin.qldonhang.create', compact('account'));
+        $orderCustomers = OrderCustomer::all();
+        return view('admin.qldonhang.create', compact('orderCustomers'));
     }
 
     /**
@@ -38,7 +39,7 @@ class OrderController extends Controller
     {
         // Validate dữ liệu
         $request->validate([
-            'account_id' => 'required|exists:accounts,id',
+            'order_customer_id' => 'required|exists:order_customer,id',
             'status' => 'required|string',
             'status_payment' => 'required|string',
             'shipping_fee' => 'required|numeric|min:0',
@@ -56,14 +57,14 @@ class OrderController extends Controller
         // Lấy thông tin đơn hàng theo ID
         $order = Order::findOrFail($id);
 
-        // Lấy thông tin tài khoản của đơn hàng
-        $account = $order->account;
+        // Lấy thông tin order_customer của đơn hàng
+        $orderCustomer = $order->orderCustomer;
 
         // Lấy danh sách các sản phẩm trong đơn hàng
         $orderItems = $order->orderItems;
 
         // Trả về view với dữ liệu đơn hàng, tài khoản và các sản phẩm
-        return view('admin.qldonhang.detail', compact('order', 'account', 'orderItems'));
+        return view('admin.qldonhang.detail', compact('order', 'orderCustomer', 'orderItems'));
     }
     /**
      * Hiển thị form chỉnh sửa đơn hàng.
@@ -71,8 +72,10 @@ class OrderController extends Controller
     public function edit($id)
     {
         $order = Order::findOrFail($id);
-        $account = Account::all(); // Lấy thông tin tài khoản
-        return view('admin.qldonhang.edit', compact('order', 'account'));
+        $orderCustomers = OrderCustomer::all(); // Lấy danh sách tài khoản (với địa chỉ và số điện thoại)
+        $paymentMethods = PaymentMethod::all(); // Lấy danh sách phương thức thanh toán
+
+        return view('admin.qldonhang.edit', compact('order', 'orderCustomers', 'paymentMethods'));
     }
 
     /**
@@ -82,35 +85,50 @@ class OrderController extends Controller
     {
         // Validate dữ liệu
         $request->validate([
-            'account_id' => 'required|exists:account,id',
-            'status' => 'required|in:Đang xử lý,Đã giao,Đã hủy',
-            'status_payment' => 'required|in:Thanh toán thành công,Thanh toán thất bại',
+            'order_customer_id' => 'required|exists:order_customer,id',
+            'payment_method_id' => 'required|exists:payment_method,id',
+            'status' => 'required|in:Đã nhận đơn,Đang vận chuyển,Đã giao,Đã hủy',
+            'status_payment' => 'required|in:Thành công,Thất bại,Đang xử lí',
             'shipping_fee' => 'required|numeric|min:0|max:999999999999999.99',
             'total' => 'required|numeric|min:0|max:999999999999999.99',
+            'address' => 'required|string',
+            'phone' => 'required|string',
         ]);
 
         // Lấy đơn hàng cần cập nhật
         $order = Order::findOrFail($id);
+        // Lấy thông tin khách hàng của đơn hàng
+        $orderCustomer = $order->orderCustomer;
 
-        // Ánh xạ giá trị status sang số (0, 1, 2)
+        // Cập nhật địa chỉ và số điện thoại trong OrderCustomer
+        $orderCustomer->update([
+            'address' => $request->address,
+            'phone' => $request->phone,
+        ]);
+
+        // Ánh xạ giá trị status sang số (0, 1, 2, 3)
         $statusMap = [
-            'Đang xử lý' => 0,
-            'Đã giao' => 1,
-            'Đã hủy' => 2
+            'Đã nhận đơn' => 1,
+            'Đang vận chuyển' => 2,
+            'Đã giao' => 3,
+            'Đã hủy' => 0
         ];
 
-        // Ánh xạ giá trị status_payment sang số (0, 1)
+        // Ánh xạ giá trị status_payment sang số (0, 1, 2)
         $statusPaymentMap = [
-            'Thanh toán thành công' => 0,
-            'Thanh toán thất bại' => 1
+            'Đang xử lí' => 1,
+            'Thành công' => 2,
+            'Thất bại' => 0
         ];
 
         // Cập nhật giá trị trực tiếp
-        $order->account_id = $request->account_id;
-        $order->status = $statusMap[$request->status] ?? null; // Kiểm tra nếu không tìm thấy giá trị thì sẽ là null
-        $order->status_payment = $statusPaymentMap[$request->status_payment] ?? null; // Ánh xạ trạng thái thanh toán
+        $order->ordercustomer_id = $request->order_customer_id;
+        $order->payment_method_id = $request->payment_method_id;
+        $order->status = $statusMap[$request->status] ?? null;
+        $order->status_payment = $statusPaymentMap[$request->status_payment] ?? null;
         $order->shipping_fee = $request->input('shipping_fee');
         $order->total = $request->input('total');
+
         // Lưu lại thay đổi
         $order->save();
 
@@ -122,7 +140,13 @@ class OrderController extends Controller
      */
     public function destroy($id)
     {
+        // Tìm đơn hàng
         $order = Order::findOrFail($id);
+
+        // Xóa tất cả các sản phẩm liên quan trong order_item
+        $order->orderItems()->delete();
+
+        // Xóa đơn hàng
         $order->delete();
 
         return redirect()->route('admin.qldonhang.index')->with('success', 'Đơn hàng đã bị xóa!');
