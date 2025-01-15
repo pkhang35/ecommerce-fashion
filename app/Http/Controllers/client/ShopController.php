@@ -37,13 +37,15 @@ class ShopController extends Controller
         return view('client.shop.shop', [
             'productData' => $productData,
             'products' => $products, // Để dùng đối tượng phân trang trong view
+            
         ]);
     }
     public function show($id)
     {
+        $relatedProducts = Product::relatedProducts($id);
         $product = Product::where('slug', $id)->firstOrFail();
         $imageProduct = $product->images->pluck('link');
         $productDetail = ProductDetail::where('product_id', $product->id)->get();
-        return view('client.shop.product-details', compact('product', 'imageProduct', 'productDetail'));
+        return view('client.shop.product-details', compact('product', 'imageProduct', 'productDetail', 'relatedProducts',));
     }
 }

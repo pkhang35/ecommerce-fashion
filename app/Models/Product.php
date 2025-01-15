@@ -61,5 +61,30 @@ class Product extends Model
     {
         return $this->hasMany(CartItem::class, 'product_id');
     }
+    public static function relatedProducts($slug)
+{
+    $product = self::where('slug', $slug)->first(); // Tìm sản phẩm theo slug
 
+    if (!$product) {
+        return collect(); // Trả về collection rỗng nếu sản phẩm không tồn tại
+    }
+
+    // Lấy danh sách sản phẩm liên quan kèm link ảnh nhỏ nhất
+    return self::where('category_id', $product->category_id)
+                ->where('slug', '!=', $product->slug) // Thay vì so sánh với id, giờ so sánh với slug
+                ->with(['images' => function ($query) {
+                    $query->orderBy('id')->limit(1); // Lấy ảnh có id nhỏ nhất
+                }])
+                ->get()
+                ->map(function ($relatedProduct) {
+                    return [
+                        'id' => $relatedProduct->id,
+                        'name' => $relatedProduct->name,
+                        'slug' => $relatedProduct->slug,
+                        'price' => $relatedProduct->price,
+                        'quantity' => $relatedProduct->quantity,
+                        'image' => $relatedProduct->images->isNotEmpty() ? $relatedProduct->images->first()->link : null,
+                    ];
+                });
+}
 }
